@@ -1,0 +1,192 @@
+{
+  "checked": "2026-10-30",
+  "models": {
+    "fal-ai/veo3.1/fast": {
+      "name": "Veo 3.1 Fast Text to Video",
+      "unit": "second",
+      "usd": 0.075,
+      "rates": [
+        {
+          "resolution": "720p",
+          "audio": false,
+          "list_usd_per_second": 0.1,
+          "usd_per_second": 0.075
+        },
+        {
+          "resolution": "720p",
+          "audio": true,
+          "list_usd_per_second": 0.15,
+          "usd_per_second": 0.1125
+        },
+        {
+          "resolution": "1080p",
+          "audio": false,
+          "list_usd_per_second": 0.1,
+          "usd_per_second": 0.075
+        },
+        {
+          "resolution": "1080p",
+          "audio": true,
+          "list_usd_per_second": 0.15,
+          "usd_per_second": 0.1125
+        },
+        {
+          "resolution": "4k",
+          "audio": false,
+          "list_usd_per_second": 0.3,
+          "usd_per_second": 0.225
+        },
+        {
+          "resolution": "4k",
+          "audio": true,
+          "list_usd_per_second": 0.35,
+          "usd_per_second": 0.2625
+        }
+      ],
+      "price_now": null
+    },
+    "fal-ai/veo3.1/fast/image-to-video": {
+      "name": "Veo 3.1 Fast Image to Video",
+      "unit": "second",
+      "usd": 0.075,
+      "rates": [
+        {
+          "resolution": "720p",
+          "audio": false,
+          "list_usd_per_second": 0.1,
+          "usd_per_second": 0.075
+        },
+        {
+          "resolution": "720p",
+          "audio": true,
+          "list_usd_per_second": 0.15,
+          "usd_per_second": 0.1125
+        },
+        {
+          "resolution": "1080p",
+          "audio": false,
+          "list_usd_per_second": 0.1,
+          "usd_per_second": 0.075
+        },
+        {
+          "resolution": "1080p",
+          "audio": true,
+          "list_usd_per_second": 0.15,
+          "usd_per_second": 0.1125
+        },
+        {
+          "resolution": "4k",
+          "audio": false,
+          "list_usd_per_second": 0.3,
+          "usd_per_second": 0.225
+        },
+        {
+          "resolution": "4k",
+          "audio": true,
+          "list_usd_per_second": 0.35,
+          "usd_per_second": 0.2625
+        }
+      ],
+      "price_now": null
+    },
+    "google/veo3-1-full-text-to-video": {
+      "name": "Veo 3.1 Full Text-to-Video",
+      "unit": "second",
+      "usd": 0.44,
+      "rates": null,
+      "price_now": null
+    },
+    "fal-ai/kling-video/v3/standard/image-to-video": {
+      "name": "Kling 3 Standard Image to Video",
+      "unit": "second",
+      "usd": 0.063,
+      "rates": [
+        {
+          "audio": false,
+          "list_usd_per_second": 0.084,
+          "usd_per_second": 0.063
+        },
+        {
+          "audio": true,
+          "list_usd_per_second": 0.126,
+          "usd_per_second": 0.0945
+        }
+      ],
+      "price_now": null
+    },
+    "fal-ai/kling-video/v3/pro/image-to-video": {
+      "name": "Kling 3 Pro Image to Video",
+      "unit": "second",
+      "usd": 0.084,
+      "rates": [
+        {
+          "audio": false,
+          "list_usd_per_second": 0.112,
+          "usd_per_second": 0.084
+        },
+        {
+          "audio": true,
+          "list_usd_per_second": 0.168,
+          "usd_per_second": 0.126
+        }
+      ],
+      "price_now": null
+    },
+    "fal-ai/minimax/hailuo-02/standard/image-to-video": {
+      "name": "Hailuo 02 Standard Image to Video",
+      "unit": "second",
+      "usd": 0.01275,
+      "rates": [
+        {
+          "resolution": "768p",
+          "audio": false,
+          "list_usd_per_second": 0.045,
+          "usd_per_second": 0.03375
+        },
+        {
+          "resolution": "512p",
+          "audio": false,
+          "list_usd_per_second": 0.017,
+          "usd_per_second": 0.01275
+        }
+      ],
+      "price_now": null
+    },
+    "venice/z-image-turbo": {
+      "name": "Z-Image Turbo (Venice)",
+      "unit": "image",
+      "usd": 0.0082,
+      "rates": null,
+      "price_now": null
+    },
+    "google/nano-banana-2-edit": {
+      "name": "Nano Banana 2 (image-to-image)",
+      "unit": "image",
+      "usd": 0.07,
+      "rates": null,
+      "price_now": null
+    },
+    "deepseek/deepseek-v3.2": {
+      "name": "DeepSeek V3.2",
+      "unit": null,
+      "usd": null,
+      "rates": null,
+      "price_now": {
+        "input_usd_per_mtok": 0.0084,
+        "output_usd_per_mtok": 0.0126,
+        "cache_read_usd_per_mtok": 0.00084
+      }
+    },
+    "qwen/qwen3-vl-235b-a22b-instruct": {
+      "name": "Qwen3 VL 235B A22B",
+      "unit": null,
+      "usd": null,
+      "rates": null,
+      "price_now": {
+        "input_usd_per_mtok": 0.0042,
+        "output_usd_per_mtok": 0.038,
+        "cache_read_usd_per_mtok": 0.002
+      }
+    }
+  }
+}

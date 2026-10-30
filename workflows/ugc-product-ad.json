@@ -1,0 +1,616 @@
+{
+  "name": "UberLLM: UGC-style product ad from one product photo",
+  "nodes": [
+    {
+      "parameters": {
+        "content": "## UGC-style product ad (UberLLM)\nFrom one product photo to a vertical ad clip of a person holding your product:\n1. **Plan the ad**: a vision model (`qwen/qwen3-vl-235b-a22b-instruct`) looks at the photo and writes the scene, the motion, a hook and a caption.\n2. **Make UGC scene**: `google/nano-banana-2-edit` puts your product in a creator's hand (the label stays as it is).\n3. **Start ad video**: `fal-ai/kling-video/v3/standard/image-to-video` turns that picture into a 5 s clip with sound.\n\n### Setup (2 minutes)\n1. Get a key at https://uberllm.dev (sign in with your email, add credit).\n2. Open any **UberLLM** HTTP node → Credential → **Create new** → *Header Auth*:\n   - Name: `Authorization`\n   - Value: `Bearer YOUR_UBERLLM_KEY`\n   Every UberLLM node in this workflow uses this one credential.\n3. Edit the **Settings** node, then click **Execute workflow**.\n\n`product_image_url` must be a public `https://` link to the product photo (a plain background works best).\n\n### Price\nScene picture $0.07 + 5 s clip with sound $0.4725 = about $0.5425 per ad (prices on 2026-10-30). The planning call costs a fraction of a cent.\n\n### What you pay\n- The job's cost is shown before it starts (`max_cost_usd` on the reply) and held from your balance. It is never billed more than that.\n- A video that fails or runs out of time costs nothing: the whole hold comes back.\n- Credit you buy does not expire.\n- No UberLLM fee on requests. Adding credit by card costs 5.5% + $0.50.\n\n### The file\nThe last node has the video as binary `data` (send it to Drive, S3, YouTube…) and its link in `url`. The link needs your key and is kept about 3 hours. To have UberLLM put the file in your own bucket, add `output_upload_url` (a presigned PUT link) to the start request.\n",
+        "height": 980,
+        "width": 560
+      },
+      "id": "99d3e542-7fde-5d04-91c9-62b122b7a9a8",
+      "name": "About",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -600,
+        -300
+      ]
+    },
+    {
+      "parameters": {},
+      "id": "7b5c5c07-acd4-5a6b-aa2d-68e5ab1d57ba",
+      "name": "Run workflow",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        0,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "mode": "manual",
+        "assignments": {
+          "assignments": [
+            {
+              "id": "fe21d6c9-cb37-56e2-9004-d45f96623084",
+              "name": "product_image_url",
+              "value": "https://raw.githubusercontent.com/PSA-Team-source/uberllm-n8n-templates/main/samples/product.jpg",
+              "type": "string"
+            },
+            {
+              "id": "3ffd6205-a145-5edf-bc18-400cac6224c9",
+              "name": "product_name",
+              "value": "Amber glass serum bottle",
+              "type": "string"
+            },
+            {
+              "id": "3d7994e9-ebe1-5f43-974f-a2d3981e5d49",
+              "name": "audience",
+              "value": "women 25-40 who care about skincare",
+              "type": "string"
+            },
+            {
+              "id": "a9d3bf87-00d3-5cc0-ba30-46f9833aa44f",
+              "name": "vision_model",
+              "value": "qwen/qwen3-vl-235b-a22b-instruct",
+              "type": "string"
+            },
+            {
+              "id": "68c6506a-3db3-57ae-8720-55ba3aa72a18",
+              "name": "image_model",
+              "value": "google/nano-banana-2-edit",
+              "type": "string"
+            },
+            {
+              "id": "1052bc1c-03ef-5d70-896f-b5a146b99dd4",
+              "name": "video_model",
+              "value": "fal-ai/kling-video/v3/standard/image-to-video",
+              "type": "string"
+            },
+            {
+              "id": "664b57e8-514a-5024-a521-59d767cb7c0d",
+              "name": "duration_seconds",
+              "value": 5,
+              "type": "number"
+            },
+            {
+              "id": "d0a9d972-28db-512b-b25e-1cf638a7ef3f",
+              "name": "audio",
+              "value": true,
+              "type": "boolean"
+            },
+            {
+              "id": "ee5b7eda-083f-591a-9b14-3e96c24d6d97",
+              "name": "max_cost",
+              "value": 1,
+              "type": "number"
+            }
+          ]
+        },
+        "includeOtherFields": false,
+        "options": {}
+      },
+      "id": "1cea9bef-61c6-5d35-a2b8-89b7dd8953cf",
+      "name": "Settings",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        220,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.uberllm.dev/v1/chat/completions",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ model: $json.vision_model, max_tokens: 700, temperature: 0.8, messages: [{ role: 'system', content: \"You plan short UGC-style product ads (a real person filming on a phone). Look at the product photo and answer with JSON only: {\\\"scene_prompt\\\": string, \\\"motion_prompt\\\": string, \\\"hook\\\": string, \\\"caption\\\": string}. scene_prompt: an edit instruction that puts this exact product (keep its label, shape and colours) in the hand of a creator who fits the audience, filming a selfie-style vertical shot in a real home setting, natural light, phone-camera look. motion_prompt: how the person and camera move in a 5-second clip (e.g. lifts the product to the camera and smiles). hook: the first spoken line. caption: the post caption.\" }, { role: 'user', content: [{ type: 'text', text: 'Product: ' + $json.product_name + '. Audience: ' + $json.audience + '.' }, { type: 'image_url', image_url: { url: $json.product_image_url } }] }], response_format: { type: 'json_object' } }) }}",
+        "options": {
+          "timeout": 120000
+        }
+      },
+      "id": "3e893767-3620-5f60-9d3e-98ea4a1e7389",
+      "name": "Plan the ad",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        440,
+        0
+      ],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "uberllmApiKey01",
+          "name": "UberLLM API key"
+        }
+      },
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 5000
+    },
+    {
+      "parameters": {
+        "jsCode": "// The model was asked for JSON. Read it even if it wrapped it in a code fence.\nconst text = $json.choices?.[0]?.message?.content ?? '';\nconst match = text.match(/\\{[\\s\\S]*\\}/);\nif (!match) throw new Error('The chat model did not answer with JSON: ' + text.slice(0, 200));\nreturn { json: JSON.parse(match[0]) };",
+        "mode": "runOnceForEachItem"
+      },
+      "id": "b3487d6c-053d-5e8f-a5e6-c55c907a443a",
+      "name": "Read the plan",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        660,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.uberllm.dev/v1/images/edits",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ model: $('Settings').item.json.image_model, prompt: $json.scene_prompt, image_url: $('Settings').item.json.product_image_url, aspect_ratio: '9:16', n: 1 }) }}",
+        "options": {
+          "timeout": 180000
+        }
+      },
+      "id": "7ab6b985-4f1e-590a-a53a-061436390b80",
+      "name": "Make UGC scene",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        880,
+        0
+      ],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "uberllmApiKey01",
+          "name": "UberLLM API key"
+        }
+      },
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 5000
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.uberllm.dev/v1/video/generations",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Idempotency-Key",
+              "value": "={{ $execution.id }}-ad"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ model: $('Settings').item.json.video_model, prompt: $('Read the plan').item.json.motion_prompt, image_url: $json.data[0].url, duration_seconds: $('Settings').item.json.duration_seconds, audio: $('Settings').item.json.audio, max_cost: $('Settings').item.json.max_cost }) }}",
+        "options": {}
+      },
+      "id": "32bcf71e-1781-59ba-a1a8-8fde9c5853d5",
+      "name": "Start ad video",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1100,
+        0
+      ],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "uberllmApiKey01",
+          "name": "UberLLM API key"
+        }
+      },
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 5000
+    },
+    {
+      "parameters": {
+        "amount": 15,
+        "unit": "seconds"
+      },
+      "id": "1d181c5d-f0ea-5d05-a597-d7c7bef11dbe",
+      "name": "Wait for video",
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        1320,
+        0
+      ],
+      "webhookId": "5cad1fe2-5446-51d9-a6e6-23260b87b868"
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "={{ 'https://api.uberllm.dev/v1/video/generations/' + $json.id }}",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "options": {}
+      },
+      "id": "1887c8b9-41b1-593c-ab38-6f43405211c8",
+      "name": "Check video job",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1540,
+        0
+      ],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "uberllmApiKey01",
+          "name": "UberLLM API key"
+        }
+      },
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 5000
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "7c95c1ad-b9f7-5b1b-bcf6-65c9929b4974",
+              "leftValue": "={{ $json.status }}",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              },
+              "rightValue": "succeeded"
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "17aab298-b9e4-550d-a716-64c2f2fe22ae",
+      "name": "Video ready?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        1760,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "0683f1c9-fe0a-5813-b335-58068b8e9af2",
+              "leftValue": "={{ ['queued', 'running'].includes($json.status) && $runIndex < 60 }}",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "23fe3c8c-ccc5-5497-a998-538e5dc78b42",
+      "name": "Still making video?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        1980,
+        160
+      ]
+    },
+    {
+      "parameters": {
+        "errorMessage": "={{ 'The video job ' + $json.id + ' ended as ' + $json.status + ': ' + ($json.error && $json.error.message ? $json.error.message : 'it took too long to wait for') + '. A failed or expired job costs nothing.' }}"
+      },
+      "id": "c2006e4b-03a2-5ab2-98f5-7431f78f3531",
+      "name": "Video not made",
+      "type": "n8n-nodes-base.stopAndError",
+      "typeVersion": 1,
+      "position": [
+        2200,
+        260
+      ]
+    },
+    {
+      "parameters": {
+        "mode": "manual",
+        "assignments": {
+          "assignments": [
+            {
+              "id": "daf542dd-9848-5b57-baea-777e791fe948",
+              "name": "job_id",
+              "value": "={{ $json.id }}",
+              "type": "string"
+            },
+            {
+              "id": "c8fb4dd3-62d0-545b-9e45-ae7b23d5edb0",
+              "name": "model",
+              "value": "={{ $json.model }}",
+              "type": "string"
+            },
+            {
+              "id": "51c099d4-0c58-5b2f-9082-d027e6644b18",
+              "name": "url",
+              "value": "={{ $json.results[0].url }}",
+              "type": "string"
+            },
+            {
+              "id": "0b0504aa-20b2-5dfd-95db-79348d751780",
+              "name": "cost_usd",
+              "value": "={{ $json.usage && $json.usage.cost_usd != null ? $json.usage.cost_usd : null }}",
+              "type": "number"
+            },
+            {
+              "id": "60810c60-f184-523d-986a-15b16507d019",
+              "name": "cost_pending",
+              "value": "={{ !!($json.usage && $json.usage.cost_pending) }}",
+              "type": "boolean"
+            },
+            {
+              "id": "ab54c5cf-1dd5-5e45-8a44-1b9d0e69af0e",
+              "name": "hook",
+              "value": "={{ $('Read the plan').first().json.hook }}",
+              "type": "string"
+            },
+            {
+              "id": "434afc0e-010b-5db3-8a17-fb8d7805fe61",
+              "name": "caption",
+              "value": "={{ $('Read the plan').first().json.caption }}",
+              "type": "string"
+            },
+            {
+              "id": "013ee66c-fa7c-52e3-9cc9-3cb4cf7fb548",
+              "name": "scene_image_url",
+              "value": "={{ $('Make UGC scene').first().json.data[0].url }}",
+              "type": "string"
+            }
+          ]
+        },
+        "includeOtherFields": false,
+        "options": {}
+      },
+      "id": "38c6f0b3-57ea-5643-8146-fb0da76ae0e5",
+      "name": "Video result",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        1980,
+        -200
+      ]
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "={{ $json.url }}",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "options": {
+          "response": {
+            "response": {
+              "responseFormat": "file",
+              "outputPropertyName": "data"
+            }
+          },
+          "timeout": 300000
+        }
+      },
+      "id": "abfd0aad-1f48-54c8-a26d-ef51dd86aaff",
+      "name": "Download video",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        2200,
+        -60
+      ],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "uberllmApiKey01",
+          "name": "UberLLM API key"
+        }
+      },
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 5000
+    },
+    {
+      "parameters": {
+        "mode": "combine",
+        "combineBy": "combineByPosition",
+        "options": {}
+      },
+      "id": "2b9ee9ab-c208-54b1-8bea-ead51e266fcd",
+      "name": "Ad video",
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [
+        2440,
+        -200
+      ]
+    }
+  ],
+  "connections": {
+    "Run workflow": {
+      "main": [
+        [
+          {
+            "node": "Settings",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Settings": {
+      "main": [
+        [
+          {
+            "node": "Plan the ad",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Plan the ad": {
+      "main": [
+        [
+          {
+            "node": "Read the plan",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Read the plan": {
+      "main": [
+        [
+          {
+            "node": "Make UGC scene",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Make UGC scene": {
+      "main": [
+        [
+          {
+            "node": "Start ad video",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Start ad video": {
+      "main": [
+        [
+          {
+            "node": "Wait for video",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait for video": {
+      "main": [
+        [
+          {
+            "node": "Check video job",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check video job": {
+      "main": [
+        [
+          {
+            "node": "Video ready?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Video ready?": {
+      "main": [
+        [
+          {
+            "node": "Video result",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Still making video?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Still making video?": {
+      "main": [
+        [
+          {
+            "node": "Wait for video",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Video not made",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Video result": {
+      "main": [
+        [
+          {
+            "node": "Ad video",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Download video",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Download video": {
+      "main": [
+        [
+          {
+            "node": "Ad video",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    }
+  },
+  "pinData": {},
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "meta": {
+    "templateCredsSetupCompleted": false,
+    "description": "UGC-style product ad from one product photo with one UberLLM key: a vision model plans the ad, an image model puts the product in a creator's hand, Kling animates it."
+  },
+  "tags": []
+}

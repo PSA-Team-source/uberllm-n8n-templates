@@ -1,0 +1,658 @@
+{
+  "name": "UberLLM: faceless Shorts pipeline (script → images → video clips)",
+  "nodes": [
+    {
+      "parameters": {
+        "content": "## Faceless Shorts pipeline (UberLLM)\nOne key does all three steps:\n1. **Write script**: a cheap chat model (`deepseek/deepseek-v3.2`) writes the title, caption, hashtags and the scenes.\n2. **Make scene image**: `venice/z-image-turbo` draws each scene as a vertical picture.\n3. **Start scene video**: `fal-ai/minimax/hailuo-02/standard/image-to-video` animates each picture into a ~6 s clip.\nScenes run one after another, so a run with 3 scenes takes a few minutes.\n\n### Setup (2 minutes)\n1. Get a key at https://uberllm.dev (sign in with your email, add credit).\n2. Open any **UberLLM** HTTP node → Credential → **Create new** → *Header Auth*:\n   - Name: `Authorization`\n   - Value: `Bearer YOUR_UBERLLM_KEY`\n   Every UberLLM node in this workflow uses this one credential.\n3. Edit the **Settings** node, then click **Execute workflow**.\n\n### Price per scene\nImage $0.0082 + 6 s clip at 768P $0.2025 = about $0.2107 per scene; the script costs a fraction of a cent (prices on 2026-10-30).\n\n### Output\nOne item: `title`, `caption`, `hashtags`, `clips[]` (narration, link, cost) and each clip as binary `scene_1`, `scene_2`… Join them with your editor or an ffmpeg step, add the narration with a speech model (`POST /v1/audio/speech`, same key), and post.\n\n### What you pay\n- The job's cost is shown before it starts (`max_cost_usd` on the reply) and held from your balance. It is never billed more than that.\n- A video that fails or runs out of time costs nothing: the whole hold comes back.\n- Credit you buy does not expire.\n- No UberLLM fee on requests. Adding credit by card costs 5.5% + $0.50.\n",
+        "height": 980,
+        "width": 560
+      },
+      "id": "ada4bc7c-cd72-57c3-9b25-2213c7ad39c5",
+      "name": "About",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -600,
+        -300
+      ]
+    },
+    {
+      "parameters": {},
+      "id": "e1552031-b450-5a3a-9865-7490c7c98cd0",
+      "name": "Run workflow",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        0,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "mode": "manual",
+        "assignments": {
+          "assignments": [
+            {
+              "id": "63c27046-6cbf-598b-be4b-57dc2a65e24a",
+              "name": "topic",
+              "value": "3 surprising facts about octopuses",
+              "type": "string"
+            },
+            {
+              "id": "0449c3a4-1c38-56e6-b4c0-53c4c356a69a",
+              "name": "scenes",
+              "value": 3,
+              "type": "number"
+            },
+            {
+              "id": "54e1c269-9f8d-58ca-b3e6-7a9136609451",
+              "name": "chat_model",
+              "value": "deepseek/deepseek-v3.2",
+              "type": "string"
+            },
+            {
+              "id": "8e9f3582-5e86-5666-8a86-f7f50b244e84",
+              "name": "image_model",
+              "value": "venice/z-image-turbo",
+              "type": "string"
+            },
+            {
+              "id": "f616a924-6da3-5c62-b3df-3c311bdee1a5",
+              "name": "video_model",
+              "value": "fal-ai/minimax/hailuo-02/standard/image-to-video",
+              "type": "string"
+            },
+            {
+              "id": "0a87a917-8b1e-52af-a48d-9fa63ffbaffa",
+              "name": "duration_seconds",
+              "value": 6,
+              "type": "number"
+            },
+            {
+              "id": "cddd25e5-4a36-5570-b4fa-56bbe813c5de",
+              "name": "resolution",
+              "value": "768P",
+              "type": "string"
+            },
+            {
+              "id": "f93a06a7-9b2f-5939-87ec-6b5c0e3bb891",
+              "name": "max_cost_per_clip",
+              "value": 0.5,
+              "type": "number"
+            }
+          ]
+        },
+        "includeOtherFields": false,
+        "options": {}
+      },
+      "id": "e164255e-2983-547e-9f53-0e074b81abd7",
+      "name": "Settings",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        220,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.uberllm.dev/v1/chat/completions",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ model: $json.chat_model, max_tokens: 1500, temperature: 0.8, messages: [{ role: 'system', content: \"You write faceless short-form videos (YouTube Shorts, TikTok, Reels). Answer with JSON only: {\\\"title\\\": string, \\\"caption\\\": string, \\\"hashtags\\\": string, \\\"scenes\\\": [{\\\"narration\\\": string, \\\"image_prompt\\\": string, \\\"motion_prompt\\\": string}]}. Each scene is one vertical shot of about 6 seconds. image_prompt describes one still frame in detail (subject, setting, light, style, vertical 9:16, no text in the picture). motion_prompt says how the camera and subject move in that shot. narration is one short spoken line.\" }, { role: 'user', content: 'Topic: ' + $json.topic + '. Write exactly ' + $json.scenes + ' scenes.' }], response_format: { type: 'json_object' } }) }}",
+        "options": {
+          "timeout": 120000
+        }
+      },
+      "id": "41c2372a-7795-5885-80c7-a750e3e04e6d",
+      "name": "Write script",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        440,
+        0
+      ],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "uberllmApiKey01",
+          "name": "UberLLM API key"
+        }
+      },
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 5000
+    },
+    {
+      "parameters": {
+        "jsCode": "// One item per scene, at most the number of scenes asked for in Settings.\nconst text = $json.choices?.[0]?.message?.content ?? '';\nconst match = text.match(/\\{[\\s\\S]*\\}/);\nif (!match) throw new Error('The chat model did not answer with JSON: ' + text.slice(0, 200));\nconst script = JSON.parse(match[0]);\nconst want = Number($('Settings').first().json.scenes) || 3;\nconst scenes = (script.scenes || []).slice(0, want);\nif (!scenes.length) throw new Error('The script has no scenes.');\nreturn scenes.map((s, i) => ({ json: { scene: i + 1, ...s } }));"
+      },
+      "id": "8ba3edb0-5059-5fb8-9e09-b66bd97c616e",
+      "name": "Split scenes",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        660,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "id": "e37c2529-a265-506f-b408-6ff254357a18",
+      "name": "One scene at a time",
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [
+        880,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.uberllm.dev/v1/images/generations",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ model: $('Settings').first().json.image_model, prompt: $json.image_prompt, n: 1, size: '1024x1536' }) }}",
+        "options": {
+          "timeout": 120000
+        }
+      },
+      "id": "9b2a93e4-0f32-51c9-b32b-c7b9529cf1f7",
+      "name": "Make scene image",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1100,
+        100
+      ],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "uberllmApiKey01",
+          "name": "UberLLM API key"
+        }
+      },
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 5000
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.uberllm.dev/v1/video/generations",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Idempotency-Key",
+              "value": "={{ $execution.id }}-scene-{{ $('One scene at a time').item.json.scene }}"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ model: $('Settings').first().json.video_model, prompt: $('One scene at a time').item.json.motion_prompt, image_url: $json.data[0].url, duration_seconds: $('Settings').first().json.duration_seconds, resolution: $('Settings').first().json.resolution, max_cost: $('Settings').first().json.max_cost_per_clip, metadata: { scene: String($('One scene at a time').item.json.scene) } }) }}",
+        "options": {}
+      },
+      "id": "a30cd991-1e87-57d6-902e-236da0c030be",
+      "name": "Start scene video",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1320,
+        100
+      ],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "uberllmApiKey01",
+          "name": "UberLLM API key"
+        }
+      },
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 5000
+    },
+    {
+      "parameters": {
+        "amount": 15,
+        "unit": "seconds"
+      },
+      "id": "f8d26021-3421-512b-b2a1-054e1411bb51",
+      "name": "Wait for clip",
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        1540,
+        100
+      ],
+      "webhookId": "dbae81d8-2fd1-5024-8918-86c551d5a67c"
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "={{ 'https://api.uberllm.dev/v1/video/generations/' + $json.id }}",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "options": {}
+      },
+      "id": "7f620ea5-8964-5434-a222-9fc8484e3d81",
+      "name": "Check clip job",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1760,
+        100
+      ],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "uberllmApiKey01",
+          "name": "UberLLM API key"
+        }
+      },
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 5000
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "94524f33-b6dc-5d3d-8e68-a6e5883d7db1",
+              "leftValue": "={{ $json.status }}",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              },
+              "rightValue": "succeeded"
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "b81d5afa-0b8b-5e93-a6ae-ed2fac43ac13",
+      "name": "Clip ready?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        1980,
+        100
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "6ac58687-85a1-5838-94c1-f93745929b1a",
+              "leftValue": "={{ ['queued', 'running'].includes($json.status) && $runIndex < 60 }}",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "b3dc5229-1860-525c-bb39-ee3eeb5389a9",
+      "name": "Still making clip?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        2200,
+        260
+      ]
+    },
+    {
+      "parameters": {
+        "errorMessage": "={{ 'The clip job ' + $json.id + ' ended as ' + $json.status + ': ' + ($json.error && $json.error.message ? $json.error.message : 'it took too long to wait for') + '. A failed or expired job costs nothing.' }}"
+      },
+      "id": "95e67ac6-9cda-51a7-bdbc-85a3a3f60880",
+      "name": "Clip not made",
+      "type": "n8n-nodes-base.stopAndError",
+      "typeVersion": 1,
+      "position": [
+        2420,
+        360
+      ]
+    },
+    {
+      "parameters": {
+        "mode": "manual",
+        "assignments": {
+          "assignments": [
+            {
+              "id": "1636f913-dc73-5335-afc5-1d5f9452aae4",
+              "name": "job_id",
+              "value": "={{ $json.id }}",
+              "type": "string"
+            },
+            {
+              "id": "6ac549f1-8649-575f-a798-feaae31182fe",
+              "name": "model",
+              "value": "={{ $json.model }}",
+              "type": "string"
+            },
+            {
+              "id": "6c2e1624-80d1-55e0-bb9c-f3df78ee47d2",
+              "name": "url",
+              "value": "={{ $json.results[0].url }}",
+              "type": "string"
+            },
+            {
+              "id": "b402620c-c5af-5350-8e5b-c7f41e752c63",
+              "name": "cost_usd",
+              "value": "={{ $json.usage && $json.usage.cost_usd != null ? $json.usage.cost_usd : null }}",
+              "type": "number"
+            },
+            {
+              "id": "b6f9be3c-a4ed-57f4-a9ab-7a387288bc09",
+              "name": "cost_pending",
+              "value": "={{ !!($json.usage && $json.usage.cost_pending) }}",
+              "type": "boolean"
+            },
+            {
+              "id": "3200fc30-626e-5609-b977-e7eecc59b55e",
+              "name": "scene",
+              "value": "={{ Number($json.metadata.scene) }}",
+              "type": "number"
+            },
+            {
+              "id": "945cb1a9-20b0-5c0f-8e15-52838c2438cf",
+              "name": "narration",
+              "value": "={{ $('Split scenes').all().find(s => String(s.json.scene) === $json.metadata.scene).json.narration }}",
+              "type": "string"
+            }
+          ]
+        },
+        "includeOtherFields": false,
+        "options": {}
+      },
+      "id": "4dff98b5-7db7-5041-9ea4-aeec1d583f03",
+      "name": "Clip result",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        2200,
+        -100
+      ]
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "={{ $json.url }}",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "options": {
+          "response": {
+            "response": {
+              "responseFormat": "file",
+              "outputPropertyName": "data"
+            }
+          },
+          "timeout": 300000
+        }
+      },
+      "id": "3fc9995e-30bc-5d3e-afa2-41f2bcae0086",
+      "name": "Download clip",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        2420,
+        40
+      ],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "uberllmApiKey01",
+          "name": "UberLLM API key"
+        }
+      },
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 5000
+    },
+    {
+      "parameters": {
+        "mode": "combine",
+        "combineBy": "combineByPosition",
+        "options": {}
+      },
+      "id": "423a59aa-8651-5b7b-9f8e-091232f74066",
+      "name": "Clip",
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [
+        2660,
+        -100
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "// One item: the script, every clip's link and cost, and each clip as binary scene_1, scene_2, ...\nconst script = JSON.parse($('Write script').first().json.choices[0].message.content.match(/\\{[\\s\\S]*\\}/)[0]);\nconst clips = [];\nconst binary = {};\nfor (const item of $input.all()) {\n  const n = Number(item.json.scene);\n  clips.push({ scene: n, narration: item.json.narration, url: item.json.url, cost_usd: item.json.cost_usd, job_id: item.json.job_id });\n  if (item.binary && item.binary.data) binary[`scene_${n}`] = item.binary.data;\n}\nclips.sort((a, b) => a.scene - b.scene);\nconst total = clips.reduce((s, c) => s + (Number(c.cost_usd) || 0), 0);\nreturn [{ json: { title: script.title, caption: script.caption, hashtags: script.hashtags, clips, video_cost_usd: Math.round(total * 10000) / 10000 }, binary }];"
+      },
+      "id": "d3ff42ec-8586-59e2-8215-11c1a1993b3c",
+      "name": "Shorts package",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1100,
+        -200
+      ]
+    }
+  ],
+  "connections": {
+    "Run workflow": {
+      "main": [
+        [
+          {
+            "node": "Settings",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Settings": {
+      "main": [
+        [
+          {
+            "node": "Write script",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Write script": {
+      "main": [
+        [
+          {
+            "node": "Split scenes",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Split scenes": {
+      "main": [
+        [
+          {
+            "node": "One scene at a time",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "One scene at a time": {
+      "main": [
+        [
+          {
+            "node": "Shorts package",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Make scene image",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Make scene image": {
+      "main": [
+        [
+          {
+            "node": "Start scene video",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Start scene video": {
+      "main": [
+        [
+          {
+            "node": "Wait for clip",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait for clip": {
+      "main": [
+        [
+          {
+            "node": "Check clip job",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check clip job": {
+      "main": [
+        [
+          {
+            "node": "Clip ready?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Clip ready?": {
+      "main": [
+        [
+          {
+            "node": "Clip result",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Still making clip?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Still making clip?": {
+      "main": [
+        [
+          {
+            "node": "Wait for clip",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Clip not made",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Clip result": {
+      "main": [
+        [
+          {
+            "node": "Clip",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Download clip",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Download clip": {
+      "main": [
+        [
+          {
+            "node": "Clip",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Clip": {
+      "main": [
+        [
+          {
+            "node": "One scene at a time",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "pinData": {},
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "meta": {
+    "templateCredsSetupCompleted": false,
+    "description": "Faceless Shorts with one UberLLM key: a cheap chat model writes the script, an image model draws each scene, a video model animates each one."
+  },
+  "tags": []
+}

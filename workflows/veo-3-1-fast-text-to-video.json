@@ -1,0 +1,477 @@
+{
+  "name": "UberLLM: text to video with Veo 3.1 Fast",
+  "nodes": [
+    {
+      "parameters": {
+        "content": "## Text to video with Veo 3.1 Fast (UberLLM)\nWrites a video from a prompt with Google's Veo 3.1 Fast, waits for it, and hands you the file.\n\n### Setup (2 minutes)\n1. Get a key at https://uberllm.dev (sign in with your email, add credit).\n2. Open any **UberLLM** HTTP node → Credential → **Create new** → *Header Auth*:\n   - Name: `Authorization`\n   - Value: `Bearer YOUR_UBERLLM_KEY`\n   Every UberLLM node in this workflow uses this one credential.\n3. Edit the **Settings** node, then click **Execute workflow**.\n\n### Price\n$0.1125 per second at 720p with sound → $0.9 for 8 s (price on 2026-10-30; live prices: https://uberllm.dev/fal-api-pricing)\nWithout sound: $0.075 per second at 720p without sound → $0.6 for 8 s (price on 2026-10-30; live prices: https://uberllm.dev/fal-api-pricing)\n\n### What you pay\n- The job's cost is shown before it starts (`max_cost_usd` on the reply) and held from your balance. It is never billed more than that.\n- A video that fails or runs out of time costs nothing: the whole hold comes back.\n- Credit you buy does not expire.\n- No UberLLM fee on requests. Adding credit by card costs 5.5% + $0.50.\n\n### The file\nThe last node has the video as binary `data` (send it to Drive, S3, YouTube…) and its link in `url`. The link needs your key and is kept about 3 hours. To have UberLLM put the file in your own bucket, add `output_upload_url` (a presigned PUT link) to the start request.\n",
+        "height": 760,
+        "width": 520
+      },
+      "id": "578dcc70-3053-5772-b359-88016d0dc47c",
+      "name": "About",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -560,
+        -260
+      ]
+    },
+    {
+      "parameters": {},
+      "id": "0fd0efb1-ea4c-5c31-a025-b58083a60a02",
+      "name": "Run workflow",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        0,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "mode": "manual",
+        "assignments": {
+          "assignments": [
+            {
+              "id": "20010150-7aa3-5fcf-a2d8-1cbb272d2e5c",
+              "name": "prompt",
+              "value": "A slow dolly shot through a neon-lit night market in the rain, steam rising from food stalls, cinematic",
+              "type": "string"
+            },
+            {
+              "id": "b29b1f97-5b0c-5cbb-bb72-3791bad7fa0a",
+              "name": "model",
+              "value": "fal-ai/veo3.1/fast",
+              "type": "string"
+            },
+            {
+              "id": "dc7b7d67-2415-5654-a93b-d97e9492da88",
+              "name": "duration_seconds",
+              "value": 8,
+              "type": "number"
+            },
+            {
+              "id": "83caa6d4-d249-5d84-850a-236e40882205",
+              "name": "resolution",
+              "value": "720p",
+              "type": "string"
+            },
+            {
+              "id": "56b8409c-ee71-5160-8166-181a05bd7724",
+              "name": "aspect_ratio",
+              "value": "16:9",
+              "type": "string"
+            },
+            {
+              "id": "ed20a9fc-73bf-58fe-a2f4-70fad5b94be5",
+              "name": "audio",
+              "value": true,
+              "type": "boolean"
+            },
+            {
+              "id": "bc70f573-6576-50ea-a6d9-35d11e96352e",
+              "name": "max_cost",
+              "value": 1.5,
+              "type": "number"
+            }
+          ]
+        },
+        "includeOtherFields": false,
+        "options": {}
+      },
+      "id": "a062c3c3-e060-5f56-847b-9e0d839a0147",
+      "name": "Settings",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        220,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.uberllm.dev/v1/video/generations",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Idempotency-Key",
+              "value": "={{ $execution.id }}-video"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ model: $json.model, prompt: $json.prompt, duration_seconds: $json.duration_seconds, resolution: $json.resolution, aspect_ratio: $json.aspect_ratio, audio: $json.audio, max_cost: $json.max_cost }) }}",
+        "options": {}
+      },
+      "id": "98625716-6a02-5273-825c-771262c15af6",
+      "name": "Start video",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        440,
+        0
+      ],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "uberllmApiKey01",
+          "name": "UberLLM API key"
+        }
+      },
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 5000
+    },
+    {
+      "parameters": {
+        "amount": 15,
+        "unit": "seconds"
+      },
+      "id": "ec4af67d-775b-5281-8fd4-a101cb7a6262",
+      "name": "Wait for video",
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        660,
+        0
+      ],
+      "webhookId": "10d3d740-6ee8-5660-8743-e8f61369bc7f"
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "={{ 'https://api.uberllm.dev/v1/video/generations/' + $json.id }}",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "options": {}
+      },
+      "id": "48ef8c31-51be-587b-b247-bc7c8ef22e33",
+      "name": "Check video job",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        880,
+        0
+      ],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "uberllmApiKey01",
+          "name": "UberLLM API key"
+        }
+      },
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 5000
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "285a6ca5-cb87-59cd-8756-72fd29bf5dae",
+              "leftValue": "={{ $json.status }}",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              },
+              "rightValue": "succeeded"
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "129780a4-4bad-5f6f-b499-d7989103deb4",
+      "name": "Video ready?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        1100,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "6fa68f5c-2210-5ffb-9389-50bb6b1a2873",
+              "leftValue": "={{ ['queued', 'running'].includes($json.status) && $runIndex < 60 }}",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "a6ce22e5-4cdf-5abe-b289-403697d3b481",
+      "name": "Still making video?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        1320,
+        160
+      ]
+    },
+    {
+      "parameters": {
+        "errorMessage": "={{ 'The video job ' + $json.id + ' ended as ' + $json.status + ': ' + ($json.error && $json.error.message ? $json.error.message : 'it took too long to wait for') + '. A failed or expired job costs nothing.' }}"
+      },
+      "id": "4cd1ce76-95f6-511d-828f-14157818e3f7",
+      "name": "Video not made",
+      "type": "n8n-nodes-base.stopAndError",
+      "typeVersion": 1,
+      "position": [
+        1540,
+        260
+      ]
+    },
+    {
+      "parameters": {
+        "mode": "manual",
+        "assignments": {
+          "assignments": [
+            {
+              "id": "049a104f-e723-58d1-8303-95cff4fa316d",
+              "name": "job_id",
+              "value": "={{ $json.id }}",
+              "type": "string"
+            },
+            {
+              "id": "e6fce5df-b79c-5b61-aed9-5cf24255a9a4",
+              "name": "model",
+              "value": "={{ $json.model }}",
+              "type": "string"
+            },
+            {
+              "id": "631950dc-bb34-5656-b7a8-03c7e4d87c5e",
+              "name": "url",
+              "value": "={{ $json.results[0].url }}",
+              "type": "string"
+            },
+            {
+              "id": "9c44df03-a46c-531b-81b9-4c722c67c922",
+              "name": "cost_usd",
+              "value": "={{ $json.usage && $json.usage.cost_usd != null ? $json.usage.cost_usd : null }}",
+              "type": "number"
+            },
+            {
+              "id": "8ff93312-2664-5971-b67b-645b16190c87",
+              "name": "cost_pending",
+              "value": "={{ !!($json.usage && $json.usage.cost_pending) }}",
+              "type": "boolean"
+            }
+          ]
+        },
+        "includeOtherFields": false,
+        "options": {}
+      },
+      "id": "83efe5b3-4988-5345-95cb-4b4e6a4147d2",
+      "name": "Video result",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        1320,
+        -200
+      ]
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "={{ $json.url }}",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "options": {
+          "response": {
+            "response": {
+              "responseFormat": "file",
+              "outputPropertyName": "data"
+            }
+          },
+          "timeout": 300000
+        }
+      },
+      "id": "786fd681-f7b4-5233-a32f-df2fa27226bc",
+      "name": "Download video",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1540,
+        -60
+      ],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "uberllmApiKey01",
+          "name": "UberLLM API key"
+        }
+      },
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 5000
+    },
+    {
+      "parameters": {
+        "mode": "combine",
+        "combineBy": "combineByPosition",
+        "options": {}
+      },
+      "id": "def9cd14-f9b1-5eeb-bfc2-a8be3708d172",
+      "name": "Video",
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [
+        1780,
+        -200
+      ]
+    }
+  ],
+  "connections": {
+    "Run workflow": {
+      "main": [
+        [
+          {
+            "node": "Settings",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Settings": {
+      "main": [
+        [
+          {
+            "node": "Start video",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Start video": {
+      "main": [
+        [
+          {
+            "node": "Wait for video",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait for video": {
+      "main": [
+        [
+          {
+            "node": "Check video job",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check video job": {
+      "main": [
+        [
+          {
+            "node": "Video ready?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Video ready?": {
+      "main": [
+        [
+          {
+            "node": "Video result",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Still making video?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Still making video?": {
+      "main": [
+        [
+          {
+            "node": "Wait for video",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Video not made",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Video result": {
+      "main": [
+        [
+          {
+            "node": "Video",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Download video",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Download video": {
+      "main": [
+        [
+          {
+            "node": "Video",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    }
+  },
+  "pinData": {},
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "meta": {
+    "templateCredsSetupCompleted": false,
+    "description": "Make a video from a text prompt with Veo 3.1 Fast through the UberLLM API: start the job, wait for it, download the file."
+  },
+  "tags": []
+}
