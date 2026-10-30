@@ -26,7 +26,8 @@ FEE = 'No UberLLM fee on requests. Adding credit by card costs 5.5% + $0.50.'
 CRED = {'httpHeaderAuth': {'id': 'uberllmApiKey01', 'name': 'UberLLM API key'}}
 
 MODELS_USED = [
-    'fal-ai/veo3.1/fast', 'fal-ai/veo3.1/fast/image-to-video', 'google/veo3-1-full-text-to-video',
+    'fal-ai/veo3.1/fast', 'fal-ai/veo3.1/fast/image-to-video', 'fal-ai/veo3.1', 'fal-ai/veo3.1/image-to-video',
+    'fal-ai/veo3.1/lite',
     'fal-ai/kling-video/v3/standard/image-to-video', 'fal-ai/kling-video/v3/pro/image-to-video',
     'fal-ai/minimax/hailuo-02/standard/image-to-video', 'venice/z-image-turbo',
     'google/nano-banana-2-edit', 'deepseek/deepseek-v3.2', 'google/gemini-2.5-flash',
@@ -496,9 +497,9 @@ VEO_PROMPT_SYSTEM = (
 
 def t_gemini_replacement(prices):
     wf = WF('gemini-veo-replacement', 'Generate AI videos with Veo 3.1 after the Gemini API shutdown (UberLLM drop-in)')
-    fast, full, i2v = 'fal-ai/veo3.1/fast', 'google/veo3-1-full-text-to-video', 'fal-ai/veo3.1/fast/image-to-video'
+    fast, full, lite = 'fal-ai/veo3.1/fast', 'fal-ai/veo3.1', 'fal-ai/veo3.1/lite'
+    i2v, full_i2v = 'fal-ai/veo3.1/fast/image-to-video', 'fal-ai/veo3.1/image-to-video'
     chat = 'deepseek/deepseek-v3.2'
-    fr = prices['models'].get(full, {}).get('usd')
     wf.note('About', (-640, -320), 600, 1180,
             "## Veo 3.1 after the Gemini API shutdown\n"
             "Google turned off the Veo 3.1 preview models in the Gemini API on 22 October 2026 "
@@ -506,8 +507,10 @@ def t_gemini_replacement(prices):
             "node stopped working. This is the same workflow on UberLLM: same steps, same output, one key.\n\n"
             "### Swap the model names\n"
             f"| Gemini model | UberLLM model |\n|---|---|\n"
-            f"| `veo-3.1-fast-generate-preview` | `{fast}` |\n"
             f"| `veo-3.1-generate-preview` | `{full}` |\n"
+            f"| `veo-3.1-fast-generate-preview` | `{fast}` |\n"
+            f"| `veo-3.1-lite-generate-preview` | `{lite}` |\n"
+            f"| Veo 3.1, from a picture | `{full_i2v}` (add `image_url`) |\n"
             f"| Veo 3.1 Fast, from a picture | `{i2v}` (add `image_url`) |\n\n"
             "### Move your own workflow\n"
             "Delete the Gemini **Generate a video** node and paste the nodes from **Generate Video with Veo** to **Video** "
@@ -517,7 +520,8 @@ def t_gemini_replacement(prices):
             + SETUP +
             "### Price\n"
             f"Veo 3.1 Fast: {video_price_line(prices, fast, '720p', True, 8)}\n"
-            + (f"Veo 3.1: {usd(fr)} per second.\n" if fr else '')
+            + f"Veo 3.1: {video_price_line(prices, full, '720p', True, 8)}\n"
+            + f"Veo 3.1 Lite: {video_price_line(prices, lite, '720p', True, 8)}\n"
             + "\n" + PROMISES)
     t = manual(wf, (0, 0))
     s = settings(wf, 'Workflow Configuration', (220, 0), [

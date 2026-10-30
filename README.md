@@ -48,8 +48,10 @@ and swap the model name:
 
 | Gemini model | UberLLM model |
 |---|---|
+| `veo-3.1-generate-preview` | `fal-ai/veo3.1` |
 | `veo-3.1-fast-generate-preview` | `fal-ai/veo3.1/fast` |
-| `veo-3.1-generate-preview` | `google/veo3-1-full-text-to-video` |
+| `veo-3.1-lite-generate-preview` | `fal-ai/veo3.1/lite` |
+| Veo 3.1 from a picture | `fal-ai/veo3.1/image-to-video` (add `image_url`) |
 | Veo 3.1 Fast from a picture | `fal-ai/veo3.1/fast/image-to-video` (add `image_url`) |
 
 The **Video** node gives what the Gemini node gave: the file as binary `data` and a `url`.

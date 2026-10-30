@@ -89,11 +89,124 @@
       ],
       "price_now": null
     },
-    "google/veo3-1-full-text-to-video": {
-      "name": "Veo 3.1 Full Text-to-Video",
+    "fal-ai/veo3.1": {
+      "name": "Veo 3.1 Text to Video",
       "unit": "second",
-      "usd": 0.44,
-      "rates": null,
+      "usd": 0.17,
+      "rates": [
+        {
+          "resolution": "720p",
+          "audio": false,
+          "list_usd_per_second": 0.2,
+          "usd_per_second": 0.17
+        },
+        {
+          "resolution": "720p",
+          "audio": true,
+          "list_usd_per_second": 0.4,
+          "usd_per_second": 0.34
+        },
+        {
+          "resolution": "1080p",
+          "audio": false,
+          "list_usd_per_second": 0.2,
+          "usd_per_second": 0.17
+        },
+        {
+          "resolution": "1080p",
+          "audio": true,
+          "list_usd_per_second": 0.4,
+          "usd_per_second": 0.34
+        },
+        {
+          "resolution": "4k",
+          "audio": false,
+          "list_usd_per_second": 0.4,
+          "usd_per_second": 0.34
+        },
+        {
+          "resolution": "4k",
+          "audio": true,
+          "list_usd_per_second": 0.6,
+          "usd_per_second": 0.51
+        }
+      ],
+      "price_now": null
+    },
+    "fal-ai/veo3.1/image-to-video": {
+      "name": "Veo 3.1 Image to Video",
+      "unit": "second",
+      "usd": 0.17,
+      "rates": [
+        {
+          "resolution": "720p",
+          "audio": false,
+          "list_usd_per_second": 0.2,
+          "usd_per_second": 0.17
+        },
+        {
+          "resolution": "720p",
+          "audio": true,
+          "list_usd_per_second": 0.4,
+          "usd_per_second": 0.34
+        },
+        {
+          "resolution": "1080p",
+          "audio": false,
+          "list_usd_per_second": 0.2,
+          "usd_per_second": 0.17
+        },
+        {
+          "resolution": "1080p",
+          "audio": true,
+          "list_usd_per_second": 0.4,
+          "usd_per_second": 0.34
+        },
+        {
+          "resolution": "4k",
+          "audio": false,
+          "list_usd_per_second": 0.4,
+          "usd_per_second": 0.34
+        },
+        {
+          "resolution": "4k",
+          "audio": true,
+          "list_usd_per_second": 0.6,
+          "usd_per_second": 0.51
+        }
+      ],
+      "price_now": null
+    },
+    "fal-ai/veo3.1/lite": {
+      "name": "Veo 3.1 Lite Text to Video",
+      "unit": "second",
+      "usd": 0.0255,
+      "rates": [
+        {
+          "resolution": "720p",
+          "audio": false,
+          "list_usd_per_second": 0.03,
+          "usd_per_second": 0.0255
+        },
+        {
+          "resolution": "720p",
+          "audio": true,
+          "list_usd_per_second": 0.05,
+          "usd_per_second": 0.0425
+        },
+        {
+          "resolution": "1080p",
+          "audio": false,
+          "list_usd_per_second": 0.05,
+          "usd_per_second": 0.0425
+        },
+        {
+          "resolution": "1080p",
+          "audio": true,
+          "list_usd_per_second": 0.08,
+          "usd_per_second": 0.068
+        }
+      ],
       "price_now": null
     },
     "fal-ai/kling-video/v3/standard/image-to-video": {
