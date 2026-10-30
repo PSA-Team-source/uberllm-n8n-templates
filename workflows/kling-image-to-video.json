@@ -65,7 +65,7 @@
             {
               "id": "dc2b0a8b-9744-5143-9908-77f6dbedb351",
               "name": "max_cost",
-              "value": 0.75,
+              "value": 1,
               "type": "number"
             }
           ]

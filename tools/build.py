@@ -315,7 +315,7 @@ def t_image_to_video(prices):
         ('model', m, 'string'),
         ('duration_seconds', 5, 'number'),
         ('audio', False, 'boolean'),
-        ('max_cost', 0.75, 'number'),
+        ('max_cost', 1, 'number'),
     ])
     start = http(wf, 'Start video', (440, 0), 'POST', f'{API}/v1/video/generations',
                  "={{ JSON.stringify({ model: $json.model, prompt: $json.prompt, image_url: $json.image_url, "
@@ -461,7 +461,7 @@ def t_ugc(prices):
         ('video_model', vid, 'string'),
         ('duration_seconds', 5, 'number'),
         ('audio', True, 'boolean'),
-        ('max_cost', 1, 'number'),
+        ('max_cost', 1.5, 'number'),
     ])
     plan = http(wf, 'Plan the ad', (440, 0), 'POST', f'{API}/v1/chat/completions',
                 chat_body('$json.vision_model', UGC_SYSTEM,
