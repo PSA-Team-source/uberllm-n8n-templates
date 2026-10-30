@@ -100,6 +100,15 @@
         "url": "https://api.uberllm.dev/v1/chat/completions",
         "authentication": "genericCredentialType",
         "genericAuthType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "X-UberLLM-Source",
+              "value": "n8n"
+            }
+          ]
+        },
         "sendBody": true,
         "specifyBody": "json",
         "jsonBody": "={{ JSON.stringify({ model: $json.promptModel, max_tokens: 400, temperature: 0.8, messages: [{ role: 'system', content: \"You write prompts for Google's Veo video model. Given a topic, write one detailed prompt for a short vertical video: subject, setting, camera movement, lighting, mood and sound. Answer with the prompt only, no preamble.\" }, { role: 'user', content: 'Topic: ' + $json.videoTopic }] }) }}",
@@ -135,6 +144,10 @@
         "headerParameters": {
           "parameters": [
             {
+              "name": "X-UberLLM-Source",
+              "value": "n8n"
+            },
+            {
               "name": "Idempotency-Key",
               "value": "={{ $execution.id }}-veo"
             }
@@ -142,7 +155,7 @@
         },
         "sendBody": true,
         "specifyBody": "json",
-        "jsonBody": "={{ JSON.stringify({ model: $('Workflow Configuration').item.json.videoModel, prompt: $json.choices[0].message.content.trim(), aspect_ratio: $('Workflow Configuration').item.json.aspectRatio, duration_seconds: $('Workflow Configuration').item.json.durationSeconds, resolution: $('Workflow Configuration').item.json.resolution, audio: $('Workflow Configuration').item.json.audio, max_cost: $('Workflow Configuration').item.json.maxCost }) }}",
+        "jsonBody": "={{ JSON.stringify({ model: $('Workflow Configuration').item.json.videoModel, prompt: $json.choices[0].message.content.trim(), aspect_ratio: $('Workflow Configuration').item.json.aspectRatio, duration_seconds: $('Workflow Configuration').item.json.durationSeconds, resolution: $('Workflow Configuration').item.json.resolution, audio: $('Workflow Configuration').item.json.audio, max_cost: $('Workflow Configuration').item.json.maxCost, metadata: { template: 'gemini-veo-replacement' } }) }}",
         "options": {}
       },
       "id": "77ee5df5-0d40-584e-9aab-87102c79eab5",
@@ -184,6 +197,15 @@
         "url": "={{ 'https://api.uberllm.dev/v1/video/generations/' + $json.id }}",
         "authentication": "genericCredentialType",
         "genericAuthType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "X-UberLLM-Source",
+              "value": "n8n"
+            }
+          ]
+        },
         "options": {}
       },
       "id": "048634cb-8dc5-5d12-86df-3293b8ef194f",
@@ -338,6 +360,15 @@
         "url": "={{ $json.url }}",
         "authentication": "genericCredentialType",
         "genericAuthType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "X-UberLLM-Source",
+              "value": "n8n"
+            }
+          ]
+        },
         "options": {
           "response": {
             "response": {
@@ -348,13 +379,13 @@
           "timeout": 300000
         }
       },
-      "id": "7b7b963f-f678-5801-86cc-43736a5bedc8",
-      "name": "Download video",
+      "id": "884e4774-69c4-5a96-bda5-2f3eb72bbd07",
+      "name": "Video",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
       "position": [
         1760,
-        -60
+        -200
       ],
       "credentials": {
         "httpHeaderAuth": {
@@ -365,21 +396,6 @@
       "retryOnFail": true,
       "maxTries": 3,
       "waitBetweenTries": 5000
-    },
-    {
-      "parameters": {
-        "mode": "combine",
-        "combineBy": "combineByPosition",
-        "options": {}
-      },
-      "id": "884e4774-69c4-5a96-bda5-2f3eb72bbd07",
-      "name": "Video",
-      "type": "n8n-nodes-base.merge",
-      "typeVersion": 3.2,
-      "position": [
-        2000,
-        -200
-      ]
     }
   ],
   "connections": {
@@ -492,22 +508,6 @@
             "node": "Video",
             "type": "main",
             "index": 0
-          },
-          {
-            "node": "Download video",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Download video": {
-      "main": [
-        [
-          {
-            "node": "Video",
-            "type": "main",
-            "index": 1
           }
         ]
       ]

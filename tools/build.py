@@ -29,7 +29,7 @@ MODELS_USED = [
     'fal-ai/veo3.1/fast', 'fal-ai/veo3.1/fast/image-to-video', 'google/veo3-1-full-text-to-video',
     'fal-ai/kling-video/v3/standard/image-to-video', 'fal-ai/kling-video/v3/pro/image-to-video',
     'fal-ai/minimax/hailuo-02/standard/image-to-video', 'venice/z-image-turbo',
-    'google/nano-banana-2-edit', 'deepseek/deepseek-v3.2', 'qwen/qwen3-vl-235b-a22b-instruct',
+    'google/nano-banana-2-edit', 'deepseek/deepseek-v3.2', 'google/gemini-2.5-flash',
 ]
 
 
@@ -133,10 +133,10 @@ def settings(wf, name, pos, fields):
 
 def http(wf, name, pos, method, url, body_expr=None, headers=None, options=None, retry=True):
     p = {'method': method, 'url': url, 'authentication': 'genericCredentialType',
-         'genericAuthType': 'httpHeaderAuth'}
-    if headers:
-        p['sendHeaders'] = True
-        p['headerParameters'] = {'parameters': [{'name': k, 'value': v} for k, v in headers]}
+         'genericAuthType': 'httpHeaderAuth', 'sendHeaders': True,
+         # Names the app on the request's line in Dashboard -> Activity.
+         'headerParameters': {'parameters': [{'name': 'X-UberLLM-Source', 'value': 'n8n'}]
+                              + [{'name': k, 'value': v} for k, v in (headers or [])]}}
     if body_expr is not None:
         p['sendBody'] = True
         p['specifyBody'] = 'json'
@@ -194,7 +194,7 @@ def wait_job(wf, start, x, y, label='video', max_polls=60, seconds=15):
 
 
 def result_and_download(wf, ready, x, y, label='video', extra_fields=(), out_name='Video'):
-    """Result fields + the file as binary `data`, merged into one item."""
+    """Result fields, then the file as binary `data` (the download keeps the fields)."""
     fields = [
         ('job_id', '={{ $json.id }}', 'string'),
         ('model', '={{ $json.model }}', 'string'),
@@ -203,16 +203,12 @@ def result_and_download(wf, ready, x, y, label='video', extra_fields=(), out_nam
         ('cost_pending', '={{ !!($json.usage && $json.usage.cost_pending) }}', 'boolean'),
     ] + list(extra_fields)
     res = settings(wf, f'{label.capitalize()} result', (x, y), fields)
-    dl = http(wf, f'Download {label}', (x + 220, y + 140), 'GET', '={{ $json.url }}',
+    dl = http(wf, out_name, (x + 220, y), 'GET', '={{ $json.url }}',
               options={'response': {'response': {'responseFormat': 'file', 'outputPropertyName': 'data'}},
                        'timeout': 300000})
-    mg = wf.add(out_name, 'n8n-nodes-base.merge', 3.2, (x + 460, y),
-                {'mode': 'combine', 'combineBy': 'combineByPosition', 'options': {}})
     wf.link(ready, res, out=0)
-    wf.link(res, mg, inp=0)
     wf.link(res, dl)
-    wf.link(dl, mg, inp=1)
-    return mg
+    return dl
 
 
 def chat_body(model_expr, system, user_expr, json_mode=True, max_tokens=900, image_expr=None):
@@ -291,7 +287,7 @@ def t_text_to_video(prices):
     ])
     start = http(wf, 'Start video', (440, 0), 'POST', f'{API}/v1/video/generations',
                  "={{ JSON.stringify({ model: $json.model, prompt: $json.prompt, duration_seconds: $json.duration_seconds, "
-                 "resolution: $json.resolution, aspect_ratio: $json.aspect_ratio, audio: $json.audio, max_cost: $json.max_cost }) }}",
+                 "resolution: $json.resolution, aspect_ratio: $json.aspect_ratio, audio: $json.audio, max_cost: $json.max_cost, metadata: { template: 'veo-3-1-fast-text-to-video' } }) }}",
                  headers=[('Idempotency-Key', '={{ $execution.id }}-video')])
     wf.chain(t, s, start)
     ready = wait_job(wf, start, 660, 0)
@@ -323,7 +319,7 @@ def t_image_to_video(prices):
     ])
     start = http(wf, 'Start video', (440, 0), 'POST', f'{API}/v1/video/generations',
                  "={{ JSON.stringify({ model: $json.model, prompt: $json.prompt, image_url: $json.image_url, "
-                 "duration_seconds: $json.duration_seconds, audio: $json.audio, max_cost: $json.max_cost }) }}",
+                 "duration_seconds: $json.duration_seconds, audio: $json.audio, max_cost: $json.max_cost, metadata: { template: 'kling-image-to-video' } }) }}",
                  headers=[('Idempotency-Key', '={{ $execution.id }}-video')])
     wf.chain(t, s, start)
     ready = wait_job(wf, start, 660, 0)
@@ -411,7 +407,7 @@ def t_shorts(prices):
               "={{ JSON.stringify({ model: $('Settings').first().json.video_model, prompt: $('One scene at a time').item.json.motion_prompt, "
               "image_url: $json.data[0].url, duration_seconds: $('Settings').first().json.duration_seconds, "
               "resolution: $('Settings').first().json.resolution, max_cost: $('Settings').first().json.max_cost_per_clip, "
-              "metadata: { scene: String($('One scene at a time').item.json.scene) } }) }}",
+              "metadata: { template: 'faceless-shorts-pipeline', scene: String($('One scene at a time').item.json.scene) } }) }}",
               headers=[('Idempotency-Key', "={{ $execution.id }}-scene-{{ $('One scene at a time').item.json.scene }}")])
     wf.chain(t, s, w, sp, loop)
     wf.link(loop, im, out=1)
@@ -439,7 +435,7 @@ UGC_SYSTEM = (
 
 def t_ugc(prices):
     wf = WF('ugc-product-ad', 'UberLLM: UGC-style product ad from one product photo')
-    vis, ed, vid = 'qwen/qwen3-vl-235b-a22b-instruct', 'google/nano-banana-2-edit', 'fal-ai/kling-video/v3/standard/image-to-video'
+    vis, ed, vid = 'google/gemini-2.5-flash', 'google/nano-banana-2-edit', 'fal-ai/kling-video/v3/standard/image-to-video'
     ep = prices['models'].get(ed, {}).get('usd')
     vr = per_second(prices, vid, None, True)
     wf.note('About', (-600, -300), 560, 980,
@@ -449,7 +445,8 @@ def t_ugc(prices):
             f"2. **Make UGC scene**: `{ed}` puts your product in a creator's hand (the label stays as it is).\n"
             f"3. **Start ad video**: `{vid}` turns that picture into a 5 s clip with sound.\n\n"
             + SETUP +
-            "`product_image_url` must be a public `https://` link to the product photo (a plain background works best).\n\n"
+            "`product_image_url` must be a public `https://` link to the product photo (a plain background works best). "
+            "If you change `vision_model`, pick one that reads pictures from a link (`google/gemini-2.5-flash` does).\n\n"
             "### Price\n"
             + (f"Scene picture {usd(ep)} + 5 s clip with sound {usd(vr * 5)} = about {usd(ep + vr * 5)} per ad "
                f"(prices on {prices['checked']}). The planning call costs a fraction of a cent.\n\n" if ep and vr else '')
@@ -469,7 +466,7 @@ def t_ugc(prices):
     plan = http(wf, 'Plan the ad', (440, 0), 'POST', f'{API}/v1/chat/completions',
                 chat_body('$json.vision_model', UGC_SYSTEM,
                           "'Product: ' + $json.product_name + '. Audience: ' + $json.audience + '.'",
-                          image_expr='$json.product_image_url', max_tokens=700),
+                          image_expr='$json.product_image_url', max_tokens=2000),
                 options={'timeout': 120000})
     parse = code(wf, 'Read the plan', (660, 0), PARSE_JSON, mode='runOnceForEachItem')
     scene = http(wf, 'Make UGC scene', (880, 0), 'POST', f'{API}/v1/images/edits',
@@ -479,7 +476,7 @@ def t_ugc(prices):
     start = http(wf, 'Start ad video', (1100, 0), 'POST', f'{API}/v1/video/generations',
                  "={{ JSON.stringify({ model: $('Settings').item.json.video_model, prompt: $('Read the plan').item.json.motion_prompt, "
                  "image_url: $json.data[0].url, duration_seconds: $('Settings').item.json.duration_seconds, "
-                 "audio: $('Settings').item.json.audio, max_cost: $('Settings').item.json.max_cost }) }}",
+                 "audio: $('Settings').item.json.audio, max_cost: $('Settings').item.json.max_cost, metadata: { template: 'ugc-product-ad' } }) }}",
                  headers=[('Idempotency-Key', '={{ $execution.id }}-ad')])
     wf.chain(t, s, plan, parse, scene, start)
     ready = wait_job(wf, start, 1320, 0)
@@ -543,7 +540,7 @@ def t_gemini_replacement(prices):
                  "duration_seconds: $('Workflow Configuration').item.json.durationSeconds, "
                  "resolution: $('Workflow Configuration').item.json.resolution, "
                  "audio: $('Workflow Configuration').item.json.audio, "
-                 "max_cost: $('Workflow Configuration').item.json.maxCost }) }}",
+                 "max_cost: $('Workflow Configuration').item.json.maxCost, metadata: { template: 'gemini-veo-replacement' } }) }}",
                  headers=[('Idempotency-Key', '={{ $execution.id }}-veo')])
     wf.chain(t, s, p, start)
     ready = wait_job(wf, start, 880, 0)

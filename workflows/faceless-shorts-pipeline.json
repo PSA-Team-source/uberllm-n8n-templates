@@ -100,6 +100,15 @@
         "url": "https://api.uberllm.dev/v1/chat/completions",
         "authentication": "genericCredentialType",
         "genericAuthType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "X-UberLLM-Source",
+              "value": "n8n"
+            }
+          ]
+        },
         "sendBody": true,
         "specifyBody": "json",
         "jsonBody": "={{ JSON.stringify({ model: $json.chat_model, max_tokens: 1500, temperature: 0.8, messages: [{ role: 'system', content: \"You write faceless short-form videos (YouTube Shorts, TikTok, Reels). Answer with JSON only: {\\\"title\\\": string, \\\"caption\\\": string, \\\"hashtags\\\": string, \\\"scenes\\\": [{\\\"narration\\\": string, \\\"image_prompt\\\": string, \\\"motion_prompt\\\": string}]}. Each scene is one vertical shot of about 6 seconds. image_prompt describes one still frame in detail (subject, setting, light, style, vertical 9:16, no text in the picture). motion_prompt says how the camera and subject move in that shot. narration is one short spoken line.\" }, { role: 'user', content: 'Topic: ' + $json.topic + '. Write exactly ' + $json.scenes + ' scenes.' }], response_format: { type: 'json_object' } }) }}",
@@ -157,6 +166,15 @@
         "url": "https://api.uberllm.dev/v1/images/generations",
         "authentication": "genericCredentialType",
         "genericAuthType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "X-UberLLM-Source",
+              "value": "n8n"
+            }
+          ]
+        },
         "sendBody": true,
         "specifyBody": "json",
         "jsonBody": "={{ JSON.stringify({ model: $('Settings').first().json.image_model, prompt: $json.image_prompt, n: 1, size: '1024x1536' }) }}",
@@ -192,6 +210,10 @@
         "headerParameters": {
           "parameters": [
             {
+              "name": "X-UberLLM-Source",
+              "value": "n8n"
+            },
+            {
               "name": "Idempotency-Key",
               "value": "={{ $execution.id }}-scene-{{ $('One scene at a time').item.json.scene }}"
             }
@@ -199,7 +221,7 @@
         },
         "sendBody": true,
         "specifyBody": "json",
-        "jsonBody": "={{ JSON.stringify({ model: $('Settings').first().json.video_model, prompt: $('One scene at a time').item.json.motion_prompt, image_url: $json.data[0].url, duration_seconds: $('Settings').first().json.duration_seconds, resolution: $('Settings').first().json.resolution, max_cost: $('Settings').first().json.max_cost_per_clip, metadata: { scene: String($('One scene at a time').item.json.scene) } }) }}",
+        "jsonBody": "={{ JSON.stringify({ model: $('Settings').first().json.video_model, prompt: $('One scene at a time').item.json.motion_prompt, image_url: $json.data[0].url, duration_seconds: $('Settings').first().json.duration_seconds, resolution: $('Settings').first().json.resolution, max_cost: $('Settings').first().json.max_cost_per_clip, metadata: { template: 'faceless-shorts-pipeline', scene: String($('One scene at a time').item.json.scene) } }) }}",
         "options": {}
       },
       "id": "a30cd991-1e87-57d6-902e-236da0c030be",
@@ -241,6 +263,15 @@
         "url": "={{ 'https://api.uberllm.dev/v1/video/generations/' + $json.id }}",
         "authentication": "genericCredentialType",
         "genericAuthType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "X-UberLLM-Source",
+              "value": "n8n"
+            }
+          ]
+        },
         "options": {}
       },
       "id": "7f620ea5-8964-5434-a222-9fc8484e3d81",
@@ -407,6 +438,15 @@
         "url": "={{ $json.url }}",
         "authentication": "genericCredentialType",
         "genericAuthType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "X-UberLLM-Source",
+              "value": "n8n"
+            }
+          ]
+        },
         "options": {
           "response": {
             "response": {
@@ -417,13 +457,13 @@
           "timeout": 300000
         }
       },
-      "id": "3fc9995e-30bc-5d3e-afa2-41f2bcae0086",
-      "name": "Download clip",
+      "id": "423a59aa-8651-5b7b-9f8e-091232f74066",
+      "name": "Clip",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
       "position": [
         2420,
-        40
+        -100
       ],
       "credentials": {
         "httpHeaderAuth": {
@@ -434,21 +474,6 @@
       "retryOnFail": true,
       "maxTries": 3,
       "waitBetweenTries": 5000
-    },
-    {
-      "parameters": {
-        "mode": "combine",
-        "combineBy": "combineByPosition",
-        "options": {}
-      },
-      "id": "423a59aa-8651-5b7b-9f8e-091232f74066",
-      "name": "Clip",
-      "type": "n8n-nodes-base.merge",
-      "typeVersion": 3.2,
-      "position": [
-        2660,
-        -100
-      ]
     },
     {
       "parameters": {
@@ -614,22 +639,6 @@
             "node": "Clip",
             "type": "main",
             "index": 0
-          },
-          {
-            "node": "Download clip",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Download clip": {
-      "main": [
-        [
-          {
-            "node": "Clip",
-            "type": "main",
-            "index": 1
           }
         ]
       ]

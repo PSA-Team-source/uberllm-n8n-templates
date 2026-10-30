@@ -3,7 +3,7 @@
   "nodes": [
     {
       "parameters": {
-        "content": "## UGC-style product ad (UberLLM)\nFrom one product photo to a vertical ad clip of a person holding your product:\n1. **Plan the ad**: a vision model (`qwen/qwen3-vl-235b-a22b-instruct`) looks at the photo and writes the scene, the motion, a hook and a caption.\n2. **Make UGC scene**: `google/nano-banana-2-edit` puts your product in a creator's hand (the label stays as it is).\n3. **Start ad video**: `fal-ai/kling-video/v3/standard/image-to-video` turns that picture into a 5 s clip with sound.\n\n### Setup (2 minutes)\n1. Get a key at https://uberllm.dev (sign in with your email, add credit).\n2. Open any **UberLLM** HTTP node → Credential → **Create new** → *Header Auth*:\n   - Name: `Authorization`\n   - Value: `Bearer YOUR_UBERLLM_KEY`\n   Every UberLLM node in this workflow uses this one credential.\n3. Edit the **Settings** node, then click **Execute workflow**.\n\n`product_image_url` must be a public `https://` link to the product photo (a plain background works best).\n\n### Price\nScene picture $0.07 + 5 s clip with sound $0.4725 = about $0.5425 per ad (prices on 2026-10-30). The planning call costs a fraction of a cent.\n\n### What you pay\n- The job's cost is shown before it starts (`max_cost_usd` on the reply) and held from your balance. It is never billed more than that.\n- A video that fails or runs out of time costs nothing: the whole hold comes back.\n- Credit you buy does not expire.\n- No UberLLM fee on requests. Adding credit by card costs 5.5% + $0.50.\n\n### The file\nThe last node has the video as binary `data` (send it to Drive, S3, YouTube…) and its link in `url`. The link needs your key and is kept about 3 hours. To have UberLLM put the file in your own bucket, add `output_upload_url` (a presigned PUT link) to the start request.\n",
+        "content": "## UGC-style product ad (UberLLM)\nFrom one product photo to a vertical ad clip of a person holding your product:\n1. **Plan the ad**: a vision model (`google/gemini-2.5-flash`) looks at the photo and writes the scene, the motion, a hook and a caption.\n2. **Make UGC scene**: `google/nano-banana-2-edit` puts your product in a creator's hand (the label stays as it is).\n3. **Start ad video**: `fal-ai/kling-video/v3/standard/image-to-video` turns that picture into a 5 s clip with sound.\n\n### Setup (2 minutes)\n1. Get a key at https://uberllm.dev (sign in with your email, add credit).\n2. Open any **UberLLM** HTTP node → Credential → **Create new** → *Header Auth*:\n   - Name: `Authorization`\n   - Value: `Bearer YOUR_UBERLLM_KEY`\n   Every UberLLM node in this workflow uses this one credential.\n3. Edit the **Settings** node, then click **Execute workflow**.\n\n`product_image_url` must be a public `https://` link to the product photo (a plain background works best). If you change `vision_model`, pick one that reads pictures from a link (`google/gemini-2.5-flash` does).\n\n### Price\nScene picture $0.07 + 5 s clip with sound $0.4725 = about $0.5425 per ad (prices on 2026-10-30). The planning call costs a fraction of a cent.\n\n### What you pay\n- The job's cost is shown before it starts (`max_cost_usd` on the reply) and held from your balance. It is never billed more than that.\n- A video that fails or runs out of time costs nothing: the whole hold comes back.\n- Credit you buy does not expire.\n- No UberLLM fee on requests. Adding credit by card costs 5.5% + $0.50.\n\n### The file\nThe last node has the video as binary `data` (send it to Drive, S3, YouTube…) and its link in `url`. The link needs your key and is kept about 3 hours. To have UberLLM put the file in your own bucket, add `output_upload_url` (a presigned PUT link) to the start request.\n",
         "height": 980,
         "width": 560
       },
@@ -53,7 +53,7 @@
             {
               "id": "a9d3bf87-00d3-5cc0-ba30-46f9833aa44f",
               "name": "vision_model",
-              "value": "qwen/qwen3-vl-235b-a22b-instruct",
+              "value": "google/gemini-2.5-flash",
               "type": "string"
             },
             {
@@ -106,9 +106,18 @@
         "url": "https://api.uberllm.dev/v1/chat/completions",
         "authentication": "genericCredentialType",
         "genericAuthType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "X-UberLLM-Source",
+              "value": "n8n"
+            }
+          ]
+        },
         "sendBody": true,
         "specifyBody": "json",
-        "jsonBody": "={{ JSON.stringify({ model: $json.vision_model, max_tokens: 700, temperature: 0.8, messages: [{ role: 'system', content: \"You plan short UGC-style product ads (a real person filming on a phone). Look at the product photo and answer with JSON only: {\\\"scene_prompt\\\": string, \\\"motion_prompt\\\": string, \\\"hook\\\": string, \\\"caption\\\": string}. scene_prompt: an edit instruction that puts this exact product (keep its label, shape and colours) in the hand of a creator who fits the audience, filming a selfie-style vertical shot in a real home setting, natural light, phone-camera look. motion_prompt: how the person and camera move in a 5-second clip (e.g. lifts the product to the camera and smiles). hook: the first spoken line. caption: the post caption.\" }, { role: 'user', content: [{ type: 'text', text: 'Product: ' + $json.product_name + '. Audience: ' + $json.audience + '.' }, { type: 'image_url', image_url: { url: $json.product_image_url } }] }], response_format: { type: 'json_object' } }) }}",
+        "jsonBody": "={{ JSON.stringify({ model: $json.vision_model, max_tokens: 2000, temperature: 0.8, messages: [{ role: 'system', content: \"You plan short UGC-style product ads (a real person filming on a phone). Look at the product photo and answer with JSON only: {\\\"scene_prompt\\\": string, \\\"motion_prompt\\\": string, \\\"hook\\\": string, \\\"caption\\\": string}. scene_prompt: an edit instruction that puts this exact product (keep its label, shape and colours) in the hand of a creator who fits the audience, filming a selfie-style vertical shot in a real home setting, natural light, phone-camera look. motion_prompt: how the person and camera move in a 5-second clip (e.g. lifts the product to the camera and smiles). hook: the first spoken line. caption: the post caption.\" }, { role: 'user', content: [{ type: 'text', text: 'Product: ' + $json.product_name + '. Audience: ' + $json.audience + '.' }, { type: 'image_url', image_url: { url: $json.product_image_url } }] }], response_format: { type: 'json_object' } }) }}",
         "options": {
           "timeout": 120000
         }
@@ -151,6 +160,15 @@
         "url": "https://api.uberllm.dev/v1/images/edits",
         "authentication": "genericCredentialType",
         "genericAuthType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "X-UberLLM-Source",
+              "value": "n8n"
+            }
+          ]
+        },
         "sendBody": true,
         "specifyBody": "json",
         "jsonBody": "={{ JSON.stringify({ model: $('Settings').item.json.image_model, prompt: $json.scene_prompt, image_url: $('Settings').item.json.product_image_url, aspect_ratio: '9:16', n: 1 }) }}",
@@ -186,6 +204,10 @@
         "headerParameters": {
           "parameters": [
             {
+              "name": "X-UberLLM-Source",
+              "value": "n8n"
+            },
+            {
               "name": "Idempotency-Key",
               "value": "={{ $execution.id }}-ad"
             }
@@ -193,7 +215,7 @@
         },
         "sendBody": true,
         "specifyBody": "json",
-        "jsonBody": "={{ JSON.stringify({ model: $('Settings').item.json.video_model, prompt: $('Read the plan').item.json.motion_prompt, image_url: $json.data[0].url, duration_seconds: $('Settings').item.json.duration_seconds, audio: $('Settings').item.json.audio, max_cost: $('Settings').item.json.max_cost }) }}",
+        "jsonBody": "={{ JSON.stringify({ model: $('Settings').item.json.video_model, prompt: $('Read the plan').item.json.motion_prompt, image_url: $json.data[0].url, duration_seconds: $('Settings').item.json.duration_seconds, audio: $('Settings').item.json.audio, max_cost: $('Settings').item.json.max_cost, metadata: { template: 'ugc-product-ad' } }) }}",
         "options": {}
       },
       "id": "32bcf71e-1781-59ba-a1a8-8fde9c5853d5",
@@ -235,6 +257,15 @@
         "url": "={{ 'https://api.uberllm.dev/v1/video/generations/' + $json.id }}",
         "authentication": "genericCredentialType",
         "genericAuthType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "X-UberLLM-Source",
+              "value": "n8n"
+            }
+          ]
+        },
         "options": {}
       },
       "id": "1887c8b9-41b1-593c-ab38-6f43405211c8",
@@ -407,6 +438,15 @@
         "url": "={{ $json.url }}",
         "authentication": "genericCredentialType",
         "genericAuthType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "X-UberLLM-Source",
+              "value": "n8n"
+            }
+          ]
+        },
         "options": {
           "response": {
             "response": {
@@ -417,13 +457,13 @@
           "timeout": 300000
         }
       },
-      "id": "abfd0aad-1f48-54c8-a26d-ef51dd86aaff",
-      "name": "Download video",
+      "id": "2b9ee9ab-c208-54b1-8bea-ead51e266fcd",
+      "name": "Ad video",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
       "position": [
         2200,
-        -60
+        -200
       ],
       "credentials": {
         "httpHeaderAuth": {
@@ -434,21 +474,6 @@
       "retryOnFail": true,
       "maxTries": 3,
       "waitBetweenTries": 5000
-    },
-    {
-      "parameters": {
-        "mode": "combine",
-        "combineBy": "combineByPosition",
-        "options": {}
-      },
-      "id": "2b9ee9ab-c208-54b1-8bea-ead51e266fcd",
-      "name": "Ad video",
-      "type": "n8n-nodes-base.merge",
-      "typeVersion": 3.2,
-      "position": [
-        2440,
-        -200
-      ]
     }
   ],
   "connections": {
@@ -583,22 +608,6 @@
             "node": "Ad video",
             "type": "main",
             "index": 0
-          },
-          {
-            "node": "Download video",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Download video": {
-      "main": [
-        [
-          {
-            "node": "Ad video",
-            "type": "main",
-            "index": 1
           }
         ]
       ]

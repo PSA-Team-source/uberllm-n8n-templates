@@ -92,6 +92,10 @@
         "headerParameters": {
           "parameters": [
             {
+              "name": "X-UberLLM-Source",
+              "value": "n8n"
+            },
+            {
               "name": "Idempotency-Key",
               "value": "={{ $execution.id }}-video"
             }
@@ -99,7 +103,7 @@
         },
         "sendBody": true,
         "specifyBody": "json",
-        "jsonBody": "={{ JSON.stringify({ model: $json.model, prompt: $json.prompt, image_url: $json.image_url, duration_seconds: $json.duration_seconds, audio: $json.audio, max_cost: $json.max_cost }) }}",
+        "jsonBody": "={{ JSON.stringify({ model: $json.model, prompt: $json.prompt, image_url: $json.image_url, duration_seconds: $json.duration_seconds, audio: $json.audio, max_cost: $json.max_cost, metadata: { template: 'kling-image-to-video' } }) }}",
         "options": {}
       },
       "id": "df49b8a8-4bd4-5ae0-9b38-9fa3edb1f328",
@@ -141,6 +145,15 @@
         "url": "={{ 'https://api.uberllm.dev/v1/video/generations/' + $json.id }}",
         "authentication": "genericCredentialType",
         "genericAuthType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "X-UberLLM-Source",
+              "value": "n8n"
+            }
+          ]
+        },
         "options": {}
       },
       "id": "3df08ade-0e92-5f3c-a4b2-b65c3ce5b675",
@@ -295,6 +308,15 @@
         "url": "={{ $json.url }}",
         "authentication": "genericCredentialType",
         "genericAuthType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "X-UberLLM-Source",
+              "value": "n8n"
+            }
+          ]
+        },
         "options": {
           "response": {
             "response": {
@@ -305,13 +327,13 @@
           "timeout": 300000
         }
       },
-      "id": "3f527f21-f8d5-5b5f-bac7-53063b8d0a44",
-      "name": "Download video",
+      "id": "e5ee35f1-8c33-5079-8b09-84b4c204c268",
+      "name": "Video",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
       "position": [
         1540,
-        -60
+        -200
       ],
       "credentials": {
         "httpHeaderAuth": {
@@ -322,21 +344,6 @@
       "retryOnFail": true,
       "maxTries": 3,
       "waitBetweenTries": 5000
-    },
-    {
-      "parameters": {
-        "mode": "combine",
-        "combineBy": "combineByPosition",
-        "options": {}
-      },
-      "id": "e5ee35f1-8c33-5079-8b09-84b4c204c268",
-      "name": "Video",
-      "type": "n8n-nodes-base.merge",
-      "typeVersion": 3.2,
-      "position": [
-        1780,
-        -200
-      ]
     }
   ],
   "connections": {
@@ -438,22 +445,6 @@
             "node": "Video",
             "type": "main",
             "index": 0
-          },
-          {
-            "node": "Download video",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Download video": {
-      "main": [
-        [
-          {
-            "node": "Video",
-            "type": "main",
-            "index": 1
           }
         ]
       ]

@@ -177,15 +177,15 @@
         "cache_read_usd_per_mtok": 0.00084
       }
     },
-    "qwen/qwen3-vl-235b-a22b-instruct": {
-      "name": "Qwen3 VL 235B A22B",
+    "google/gemini-2.5-flash": {
+      "name": "Gemini 2.5 Flash",
       "unit": null,
       "usd": null,
       "rates": null,
       "price_now": {
-        "input_usd_per_mtok": 0.0042,
-        "output_usd_per_mtok": 0.038,
-        "cache_read_usd_per_mtok": 0.002
+        "input_usd_per_mtok": 0.051,
+        "output_usd_per_mtok": 0.425,
+        "cache_read_usd_per_mtok": 0.0051
       }
     }
   }
