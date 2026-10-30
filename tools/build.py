@@ -244,7 +244,7 @@ PROMISES = (
     "- The job's cost is shown before it starts (`max_cost_usd` on the reply) and held from your balance. "
     "It is never billed more than that.\n"
     "- A video that fails or runs out of time costs nothing: the whole hold comes back.\n"
-    "- Credit you buy does not expire.\n"
+    "- Credit you buy does not expire while your account is open.\n"
     f"- {FEE}\n"
 )
 
@@ -392,7 +392,7 @@ def t_shorts(prices):
         ('video_model', vid, 'string'),
         ('duration_seconds', 6, 'number'),
         ('resolution', '768P', 'string'),
-        ('max_cost_per_clip', 0.5, 'number'),
+        ('max_cost_per_clip', 0.75, 'number'),
     ])
     w = http(wf, 'Write script', (440, 0), 'POST', f'{API}/v1/chat/completions',
              chat_body('$json.chat_model', SHORTS_SYSTEM,
