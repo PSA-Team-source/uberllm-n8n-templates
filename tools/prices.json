@@ -4,43 +4,43 @@
     "fal-ai/veo3.1/fast": {
       "name": "Veo 3.1 Fast Text to Video",
       "unit": "second",
-      "usd": 0.075,
+      "usd": 0.085,
       "rates": [
         {
           "resolution": "720p",
           "audio": false,
           "list_usd_per_second": 0.1,
-          "usd_per_second": 0.075
+          "usd_per_second": 0.085
         },
         {
           "resolution": "720p",
           "audio": true,
           "list_usd_per_second": 0.15,
-          "usd_per_second": 0.1125
+          "usd_per_second": 0.1275
         },
         {
           "resolution": "1080p",
           "audio": false,
           "list_usd_per_second": 0.1,
-          "usd_per_second": 0.075
+          "usd_per_second": 0.085
         },
         {
           "resolution": "1080p",
           "audio": true,
           "list_usd_per_second": 0.15,
-          "usd_per_second": 0.1125
+          "usd_per_second": 0.1275
         },
         {
           "resolution": "4k",
           "audio": false,
           "list_usd_per_second": 0.3,
-          "usd_per_second": 0.225
+          "usd_per_second": 0.255
         },
         {
           "resolution": "4k",
           "audio": true,
           "list_usd_per_second": 0.35,
-          "usd_per_second": 0.2625
+          "usd_per_second": 0.2975
         }
       ],
       "price_now": null
@@ -48,43 +48,43 @@
     "fal-ai/veo3.1/fast/image-to-video": {
       "name": "Veo 3.1 Fast Image to Video",
       "unit": "second",
-      "usd": 0.075,
+      "usd": 0.085,
       "rates": [
         {
           "resolution": "720p",
           "audio": false,
           "list_usd_per_second": 0.1,
-          "usd_per_second": 0.075
+          "usd_per_second": 0.085
         },
         {
           "resolution": "720p",
           "audio": true,
           "list_usd_per_second": 0.15,
-          "usd_per_second": 0.1125
+          "usd_per_second": 0.1275
         },
         {
           "resolution": "1080p",
           "audio": false,
           "list_usd_per_second": 0.1,
-          "usd_per_second": 0.075
+          "usd_per_second": 0.085
         },
         {
           "resolution": "1080p",
           "audio": true,
           "list_usd_per_second": 0.15,
-          "usd_per_second": 0.1125
+          "usd_per_second": 0.1275
         },
         {
           "resolution": "4k",
           "audio": false,
           "list_usd_per_second": 0.3,
-          "usd_per_second": 0.225
+          "usd_per_second": 0.255
         },
         {
           "resolution": "4k",
           "audio": true,
           "list_usd_per_second": 0.35,
-          "usd_per_second": 0.2625
+          "usd_per_second": 0.2975
         }
       ],
       "price_now": null
@@ -99,17 +99,17 @@
     "fal-ai/kling-video/v3/standard/image-to-video": {
       "name": "Kling 3 Standard Image to Video",
       "unit": "second",
-      "usd": 0.063,
+      "usd": 0.0714,
       "rates": [
         {
           "audio": false,
           "list_usd_per_second": 0.084,
-          "usd_per_second": 0.063
+          "usd_per_second": 0.0714
         },
         {
           "audio": true,
           "list_usd_per_second": 0.126,
-          "usd_per_second": 0.0945
+          "usd_per_second": 0.1071
         }
       ],
       "price_now": null
@@ -117,17 +117,17 @@
     "fal-ai/kling-video/v3/pro/image-to-video": {
       "name": "Kling 3 Pro Image to Video",
       "unit": "second",
-      "usd": 0.084,
+      "usd": 0.0952,
       "rates": [
         {
           "audio": false,
           "list_usd_per_second": 0.112,
-          "usd_per_second": 0.084
+          "usd_per_second": 0.0952
         },
         {
           "audio": true,
           "list_usd_per_second": 0.168,
-          "usd_per_second": 0.126
+          "usd_per_second": 0.1428
         }
       ],
       "price_now": null
@@ -135,19 +135,19 @@
     "fal-ai/minimax/hailuo-02/standard/image-to-video": {
       "name": "Hailuo 02 Standard Image to Video",
       "unit": "second",
-      "usd": 0.01275,
+      "usd": 0.01445,
       "rates": [
         {
           "resolution": "768p",
           "audio": false,
           "list_usd_per_second": 0.045,
-          "usd_per_second": 0.03375
+          "usd_per_second": 0.03825
         },
         {
           "resolution": "512p",
           "audio": false,
           "list_usd_per_second": 0.017,
-          "usd_per_second": 0.01275
+          "usd_per_second": 0.01445
         }
       ],
       "price_now": null
